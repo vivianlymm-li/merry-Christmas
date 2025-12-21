@@ -286,50 +286,41 @@
                 float v = fract(sin(seed * 78.233) * 43758.5453);
                 float theta = 2.0 * 3.14159 * u;
                 float phi = acos(2.0 * v - 1.0);
-                float r = 2.0 * pow(fract(sin(seed * 99.123) * 12345.0), 1.0/3.0); 
+                float r = 3.0 * cbrt(fract(sin(seed * 99.123) * 12345.0)); 
                 float x = r * sin(phi) * cos(theta);
-                float y = r * sin(phi) * sin(theta) + 10.0;
+                float y = r * sin(phi) * sin(theta) + 6.0;
                 float z = r * cos(phi);
                 return vec3(x, y, z);
             }
 
             void main() {
+                // 淡金色 (1.0, 0.92, 0.6)
                 vec3 goldColor = vec3(1.0, 0.92, 0.6); 
                 float isGold = step(aRandom, uGoldProgress);
+                // 确保有基础可见性：如果还没变金，显示基础蓝色 aColor
                 vColor = mix(aColor, goldColor, isGold);
 
                 vec3 currentPos;
-                float currentSize = aSize;
                 
                 vec3 sphereP = getSpherePos(aRandom);
                 vec3 treeP = aTreePos; 
-                vec3 center = vec3(0.0, 10.0, 0.0);
+                vec3 center = vec3(0.0, 6.0, 0.0);
 
-                // [修改] 纯净的漂浮球体
-                vec3 localPos = sphereP - center;
-                // 自转
-                float angle = uTime * 0.2;
-                float s = sin(angle);
-                float c = cos(angle);
-                float rx = localPos.x * c - localPos.z * s;
-                float rz = localPos.x * s + localPos.z * c;
-                vec3 spherePos = vec3(rx, localPos.y, rz) + center;
-                // 漂浮
-                spherePos.y += sin(uTime * 1.0 + aRandom) * 0.1;
+                // --- 位置逻辑 ---
+                vec3 flowPos = sphereP;
+                float flow = fract(uTime * 0.5 + aRandom);
+                flowPos = mix(sphereP * 2.0 - vec3(0,6,0), sphereP - vec3(0,6,0), flow) + vec3(0,6,0);
+                flowPos += vec3(sin(uTime * 5.0 + aRandom*10.0)*0.2);
+                
+                currentPos = flowPos;
 
-                if (uBuildProgress < 0.01) {
-                    currentPos = spherePos;
-                    // 未解锁部分隐藏
-                    if (aRandom > uGoldProgress) {
-                        currentSize = 0.0;
-                    }
-                } else {
+                if (uBuildProgress > 0.0) {
                     float t = 1.0 - pow(1.0 - uBuildProgress, 3.0); 
-                    currentPos = mix(spherePos, treeP, t);
+                    currentPos = mix(flowPos, treeP, t);
                     
-                    float revealThreshold = 10.5 - (uBuildProgress * 1.0); 
+                    float revealThreshold = 12.0 * (1.0 - uBuildProgress);
                     if (treeP.y < revealThreshold) {
-                         currentPos = spherePos; 
+                         currentPos = flowPos; 
                     }
                 }
 
@@ -345,8 +336,8 @@
                 }
 
                 vec4 mvPosition = modelViewMatrix * vec4(currentPos, 1.0);
-                float finalSize = currentSize * (250.0 / -mvPosition.z);
-                gl_PointSize = max(0.0, finalSize); 
+                float finalSize = aSize * (250.0 / -mvPosition.z);
+                gl_PointSize = max(3.0, finalSize); 
                 gl_Position = projectionMatrix * mvPosition;
             }
         `;
@@ -433,7 +424,7 @@
                     const chaosRadius = 3.0 * scatterFactor; x += (Math.random() - 0.5) * chaosRadius; z += (Math.random() - 0.5) * chaosRadius;
                     yFinal += (Math.random() - 0.5) * scatterFactor * 0.2;
                 }
-                positions.push(x, y, z);
+                positions.push(x, yFinal, z);
 
                 const mixFactor = Math.random();
                 const mixedColor = CONFIG.colorInside.clone().lerp(CONFIG.colorOutside, mixFactor);
@@ -441,6 +432,7 @@
                 mixedColor.multiplyScalar(brightnessFactor);
                 if (scatterFactor > 0) mixedColor.multiplyScalar(1.0 - scatterFactor * 0.7);
                 colors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+                
                 let size = Math.random() * 1.0 + 0.2; 
                 size *= (1.0 - p * 0.3);
                 if (scatterFactor > 0) size *= (1.0 - scatterFactor * 0.6);
@@ -465,18 +457,18 @@
             scene.add(treePoints);
         }
 
-        // --- 迷你丝带树 ---
+        // --- 迷你丝带树 (修复颜色，使用 aColor/aSize) ---
         function createMiniTree() {
             const geometry = new THREE.BufferGeometry();
             const positions = []; const colors = []; const sizes = []; const randoms = [];
             const texture = createSparkleTexture();
             
             const particleCount = 6000; 
-            const treeHeight = 1.0;     
-            const baseRadius = 0.3;     
+            const treeHeight = 12;      
+            const baseRadius = 3.5;     
             const spiralLoops = 5;      
-            const ribbonWidth = 0.08;   
-            const waveAmplitude = 0.025;
+            const ribbonWidth = 1.5;    
+            const waveAmplitude = 0.3;  
             
             const treePositions = [];
 
@@ -492,7 +484,6 @@
                 const rWave = Math.cos(wavePhase) * currentAmp * 0.8;
                 let centerY = hBase + yWave; 
                 let centerR = rBase + rWave;
-
                 let widthFactor = p > 0.4 ? 1.0 - (p - 0.4) * 0.5 : 1.0;
                 const currentWidth = ribbonWidth * widthFactor;
                 const v = Math.random() - 0.5; 
@@ -504,13 +495,14 @@
                 let yFinal = centerY + yOffset;
                 const normalizedPos = v + 0.5; 
                 yFinal -= Math.pow(normalizedPos, 2) * currentWidth * 0.5;
-                yFinal += (Math.random() - 0.5) * 0.01; 
+                yFinal += (Math.random() - 0.5) * 0.1; 
                 let x = Math.cos(angle) * rFinal; 
                 let z = Math.sin(angle) * rFinal;
                 
-                treePositions.push(x, yFinal + 9.5, z);
+                treePositions.push(x, yFinal + 4, z);
                 positions.push(0,0,0);
 
+                // [修复] 初始设为蓝色
                 const mixFactor = Math.random();
                 const mixedColor = CONFIG.colorInside.clone().lerp(CONFIG.colorOutside, mixFactor);
                 mixedColor.multiplyScalar(0.8);
@@ -523,8 +515,8 @@
             
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); 
             geometry.setAttribute('aTreePos', new THREE.Float32BufferAttribute(treePositions, 3)); 
-            geometry.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3)); 
-            geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));   
+            geometry.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3)); // 修正
+            geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));   // 修正
             geometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randoms, 1));
             
             const material = new THREE.ShaderMaterial({
@@ -549,7 +541,7 @@
             scene.add(miniTreePoints);
         }
 
-        // --- 3.3 闪烁星尘 ---
+        // --- 3.3 闪烁星尘 (还原颜色) ---
         function createTwinkles() {
             const geometry = new THREE.BufferGeometry();
             const positions = []; const colors = []; const sizes = []; const randoms = [];
@@ -587,7 +579,7 @@
             scene.add(twinklePoints);
         }
 
-        // --- 3.5 绚烂粒子球和双层星环 ---
+        // --- 3.5 绚烂粒子球和双层星环 (还原) ---
         function createTopParticles() {
             const texture = createSparkleTexture();
             const starTexture = createStarTexture();
@@ -667,7 +659,7 @@
             scene.add(topStarRing2Points);
         }
 
-        // --- 12张照片围墙 (双面卡片逻辑) ---
+        // --- 12张照片围墙 ---
         function createPhotoGallery() {
             photoGroup = new THREE.Group();
             photoGroup.position.set(0, 10, 0); 
@@ -733,7 +725,6 @@
                 img.crossOrigin = "Anonymous";
                 img.onload = () => {
                     ctx.drawImage(img, 15, 15, 270, 370);
-                    // 移除变暗逻辑
                     ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
                     ctx.lineWidth = 15;
                     ctx.strokeRect(10, 10, 280, 380);

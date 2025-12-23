@@ -1,1173 +1,150 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Merry Christmas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入更有质感的字体：Cinzel (古典衬线) 和 Lato (现代无衬线) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #050505; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        #canvas-container { 
-            width: 100vw; 
-            height: 100vh; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            z-index: 1; 
+        body {
+            font-family: 'Lato', sans-serif;
+            /* 蓝色渐变背景，营造深夜星空感 */
+            background: radial-gradient(circle at center top, #1e3a8a, #0f172a); 
+            overflow: hidden;
+            color: #e2e8f0;
         }
         
-        #ui-layer {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            z-index: 10;
-            color: rgba(255, 255, 255, 0.8);
-            pointer-events: none;
-            user-select: none;
-            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        .elegant-font {
+            font-family: 'Cinzel', serif;
         }
-        h1 { margin: 0; font-weight: 300; font-size: 1.4rem; letter-spacing: 4px; text-transform: uppercase; }
-        p { font-size: 0.9rem; color: #aaa; margin-top: 5px; transition: color 0.3s; }
 
-        #video-input { display: none; } 
-        
-        .loading {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-size: 1.2rem; z-index: 20; transition: opacity 0.5s;
+        /* Snowflake Animation */
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
+            animation: fall linear forwards;
+            z-index: 1;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(360deg);
+            }
+        }
+
+        /* 冰霜玻璃质感 */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 0 40px rgba(56, 189, 248, 0.1);
+        }
+
+        /* 冰蓝色呼吸灯效果 */
+        @keyframes pulse-ice {
+            0%, 100% { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+            50% { color: #bae6fd; text-shadow: 0 0 20px rgba(186, 230, 253, 0.8), 0 0 10px rgba(56, 189, 248, 0.6); }
+        }
+
+        .glow-text {
+            animation: pulse-ice 3s infinite ease-in-out;
+        }
+
+        /* 装饰线条渐变 */
+        .divider-gradient {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
         }
     </style>
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
 </head>
-<body>
+<body class="h-screen w-full flex items-center justify-center relative">
 
-    <div id="loading" class="loading">LOADING (camera)...</div>
+    <!-- Snow container -->
+    <div id="snow-container" class="absolute inset-0 pointer-events-none w-full h-full"></div>
 
-    <div id="ui-layer">
-        <h1 id="status-text">merry christmas</h1>
-        <p id="instruction-text">🖐️ 张开手掌展示照片墙 -> ↔️ 左右挥手旋转 -> 👌 捏合翻开照片 / 🤏 五指聚拢复原</p>
+    <!-- Main Card -->
+    <div class="glass-card p-10 md:p-14 rounded-sm text-center max-w-lg w-11/12 mx-auto relative z-10 border-t-4 border-t-sky-400/50 shadow-2xl">
+        
+        <!-- Decorative Star Icon -->
+        <div class="mb-8 relative">
+            <div class="absolute inset-0 bg-blue-400 blur-2xl opacity-20 rounded-full"></div>
+            <svg class="w-14 h-14 mx-auto text-sky-200 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+            </svg>
+        </div>
+
+        <!-- Main Message -->
+        <h1 class="elegant-font text-4xl md:text-6xl text-white mb-6 tracking-wider font-bold uppercase drop-shadow-md">
+            Wishing you a <br>
+            <span class="text-sky-300 block mt-2 text-3xl md:text-5xl font-medium tracking-widest">Merry Christmas</span>
+        </h1>
+
+        <!-- Divider -->
+        <div class="h-px w-full divider-gradient mb-8"></div>
+
+        <!-- Sub Message -->
+        <p class="text-slate-300 text-lg font-light tracking-wide uppercase" id="date-message">
+            Open this site again on the <br>
+            <span class="inline-block mt-3 text-sky-200 font-bold border-b border-sky-400/50 pb-1 text-2xl elegant-font">25th</span>
+        </p>
+
+        <!-- Dynamic Footer (Changes on Dec 25) -->
+        <div id="christmas-surprise" class="hidden mt-10 p-5 bg-blue-900/60 border border-blue-400/30 rounded-lg text-sky-100 animate-bounce backdrop-blur-md">
+            <span class="block text-2xl mb-1">❄️</span>
+            <span class="elegant-font tracking-widest text-lg">It's Christmas Day!</span>
+        </div>
     </div>
 
-    <video id="video-input"></video>
-    <div id="canvas-container"></div>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-
-        // --- 配置项 ---
-        const CONFIG = {
-            particleCount: 30000,
-            treeHeight: 22,
-            baseRadius: 9.5,
-            spiralLoops: 6,
-            ribbonWidth: 3.6,
-            waveFrequency: 3,
-            waveAmplitude: 0.6,
-            galaxyRadius: 60, 
-            colorInside: new THREE.Color('#88ccff'),
-            colorOutside: new THREE.Color('#ffffff')
-        };
-        
-        const IMG_FILES = [
-            'retouch_2025122015250149.jpg', 'retouch_2025122016420810.jpg',
-            'retouch_2025122016251396.jpg', 'retouch_2025122017071293.jpg',
-            'retouch_2025122017340053.jpg', 'retouch_2025122016130314.jpg',
-            'retouch_2025122017225264.jpg', 'retouch_2025122015485442.jpg',
-            'retouch_2025122017060245.jpg', 'retouch_2025122018043844.jpg',
-            'retouch_2025122018043845.jpg', 'retouch_2025122018043846.jpg'
-        ];
-
-        const BLESSINGS = [
-            "Merry Christmas", "Happy New Year", "Joy & Peace", "Warm Wishes",
-            "Holiday Cheer", "Season's Greetings", "Magic Moments", "Stay Cozy",
-            "Love & Light", "Best Wishes", "Dreams Come True", "Be Happy"
-        ];
-
-        let scene, camera, renderer, composer, controls;
-        let treePoints, trunkPoints, twinklePoints; 
-        let topStarSpherePoints, topStarRing1Points, topStarRing2Points;
-        let miniTreePoints; 
-        let photoGroup; 
-        let time = 0;
-
-        let targetMorph = 0.0; 
-        let currentMorph = 0.0;
-        let isHandOpen = false;
-        let isPinching = false;
-        
-        let lastHandX = undefined;
-        let rotationVelocity = 0;
-        let activeCard = null;
-
-        let treeBuildStarted = false; 
-        let treeBuildProgress = 0.0; 
-
-        function initScene() {
-            const container = document.getElementById('canvas-container');
-
-            scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x050505, 0.02);
-
-            const ambientLight = new THREE.AmbientLight(0x404040, 2.0);
-            scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
-            dirLight.position.set(10, 20, 10);
-            scene.add(dirLight);
-            const backLight = new THREE.DirectionalLight(0x88ccff, 1.0); 
-            backLight.position.set(-10, 10, -20);
-            scene.add(backLight);
-
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 12, 35);
-            camera.lookAt(0, 10, 0); 
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.toneMapping = THREE.ReinhardToneMapping;
-            container.appendChild(renderer.domElement);
-
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 1.0;
-            controls.target.set(0, 10, 0);
-
-            const renderScene = new RenderPass(scene, camera);
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            bloomPass.strength = 1.0;  
-            bloomPass.radius = 0.6;
-            bloomPass.threshold = 0.15;
-
-            composer = new EffectComposer(renderer);
-            composer.addPass(renderScene);
-            composer.addPass(bloomPass);
-
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        function addGalaxyAttribute(geometry, count, radiusScale = 1.0, yCenterOffset = 10) {
-            const positions = [];
-            const rBase = CONFIG.galaxyRadius * radiusScale;
-
-            for(let i=0; i<count; i++) {
-                const u = Math.random();
-                const v = Math.random();
-                const theta = 2 * Math.PI * u;
-                const phi = Math.acos(2 * v - 1);
-                const r = rBase * Math.cbrt(Math.random()); 
-                const x = r * Math.sin(phi) * Math.cos(theta);
-                const y = r * Math.sin(phi) * Math.sin(theta) + yCenterOffset; 
-                const z = r * Math.cos(phi);
-                positions.push(x, y, z);
-            }
-            geometry.setAttribute('aGalaxyPos', new THREE.Float32BufferAttribute(positions, 3));
-        }
-
-        function createSparkleTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            g.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            g.addColorStop(0.5, 'rgba(100, 160, 255, 0.15)');
-            g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function createStarTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            const cx = 64, cy = 64;
-            const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
-            g.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-            g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
-            ctx.beginPath();
-            for (let i = 0; i < 4; i++) {
-                const angle = (i * Math.PI) / 2;
-                ctx.lineTo(cx + Math.cos(angle) * 60, cy + Math.sin(angle) * 60);
-                const midAngle = angle + Math.PI / 4;
-                ctx.quadraticCurveTo(cx, cy, cx + Math.cos(midAngle) * 8, cy + Math.sin(midAngle) * 8);
-            }
-            ctx.closePath(); ctx.fillStyle = '#ffffff'; ctx.fill();
-            ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255, 255, 255, 1.0)'; ctx.fill();
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        // --- Shader (兼容修复版: aColor/aSize) ---
-        const commonVertexShader = `
-            attribute float aSize;
-            attribute float aRandom;
-            attribute vec3 aColor;
-            attribute vec3 aGalaxyPos;
-            varying vec3 vColor;
-            uniform float uTime;
-            uniform float uMorph;
-            uniform sampler2D uTexture;
-            void main() {
-                vColor = aColor;
-                vec3 treePos = position;
-                if (uMorph < 0.99) {
-                    float wave = sin(uTime * 1.5 + treePos.y * 0.5);
-                    treePos.y += wave * 0.08;
-                }
-                float t = uMorph;
-                t = t * t * (3.0 - 2.0 * t);
-                vec3 pos = mix(treePos, aGalaxyPos, t);
-                if (uMorph > 0.01) {
-                    pos.x += sin(uTime * 0.5 + aRandom * 10.0) * 0.1 * uMorph;
-                    pos.z += cos(uTime * 0.3 + aRandom * 10.0) * 0.1 * uMorph;
-                }
-                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-                float baseSize = aSize * (350.0 / -mvPosition.z);
-                float twinkle = sin(uTime * 3.0 + aRandom * 10.0);
-                float flashSize = baseSize * (0.8 + twinkle * 0.3);
-                gl_PointSize = max(2.0, flashSize); 
-                gl_Position = projectionMatrix * mvPosition;
-            }
-        `;
-
-        const commonFragmentShader = `
-            uniform sampler2D uTexture;
-            uniform float uOpacity; 
-            varying vec3 vColor;
-            void main() {
-                vec4 texColor = texture2D(uTexture, gl_PointCoord);
-                if (texColor.a < 0.05) discard;
-                gl_FragColor = vec4(vColor, 1.0) * texColor;
-                gl_FragColor.a *= uOpacity; 
-            }
-        `;
-
-        // --- 小树专用 Shader ---
-        const miniTreeVertexShader = `
-            attribute float aSize;
-            attribute float aRandom;
-            attribute vec3 aTreePos; 
-            attribute vec3 aColor; 
+    <script>
+        // Snowflake Logic (Updated for smoother rotation)
+        function createSnowflake() {
+            const snowContainer = document.getElementById('snow-container');
+            const snowflake = document.createElement('div');
+            snowflake.innerHTML = '❄';
+            snowflake.classList.add('snowflake');
             
-            varying vec3 vColor;
-            uniform float uTime;
-            uniform float uOpacity;
-            uniform float uGoldProgress; 
-            uniform float uExplodeTime;  
-            uniform float uDisperse;     
-            uniform float uBuildProgress;
-            uniform sampler2D uTexture;
+            // Randomize properties
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.opacity = Math.random() * 0.5 + 0.3; // Softer opacity
+            snowflake.style.fontSize = (Math.random() * 15 + 8) + 'px'; // Varied sizes
+            
+            const duration = Math.random() * 5 + 3; // Slower, more graceful fall
+            snowflake.style.animationDuration = duration + 's';
+            
+            snowContainer.appendChild(snowflake);
 
-            vec3 getSpherePos(float seed) {
-                float u = fract(sin(seed * 12.9898) * 43758.5453);
-                float v = fract(sin(seed * 78.233) * 43758.5453);
-                float theta = 2.0 * 3.14159 * u;
-                float phi = acos(2.0 * v - 1.0);
-                float r = 3.0 * cbrt(fract(sin(seed * 99.123) * 12345.0)); 
-                float x = r * sin(phi) * cos(theta);
-                float y = r * sin(phi) * sin(theta) + 6.0;
-                float z = r * cos(phi);
-                return vec3(x, y, z);
-            }
+            // Remove after animation
+            setTimeout(() => {
+                snowflake.remove();
+            }, duration * 1000);
+        }
 
-            void main() {
-                // 淡金色 (1.0, 0.92, 0.6)
-                vec3 goldColor = vec3(1.0, 0.92, 0.6); 
-                float isGold = step(aRandom, uGoldProgress);
-                // 确保有基础可见性：如果还没变金，显示基础蓝色 aColor
-                vColor = mix(aColor, goldColor, isGold);
+        // Create snow continuously
+        setInterval(createSnowflake, 150);
 
-                vec3 currentPos;
+        // Date Check Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const month = today.getMonth(); // 0-11, 11 is December
+            const date = today.getDate();
+
+            const messageElement = document.getElementById('date-message');
+            const surpriseElement = document.getElementById('christmas-surprise');
+
+            // Check if it is December 25th
+            if (month === 11 && date === 25) {
+                // It is Christmas!
+                messageElement.innerHTML = "Today is the <span class='glow-text text-4xl elegant-font block mt-2'>25th!</span>";
+                surpriseElement.classList.remove('hidden');
                 
-                vec3 sphereP = getSpherePos(aRandom);
-                vec3 treeP = aTreePos; 
-                vec3 center = vec3(0.0, 6.0, 0.0);
-
-                // --- 位置逻辑 ---
-                vec3 flowPos = sphereP;
-                float flow = fract(uTime * 0.5 + aRandom);
-                flowPos = mix(sphereP * 2.0 - vec3(0,6,0), sphereP - vec3(0,6,0), flow) + vec3(0,6,0);
-                flowPos += vec3(sin(uTime * 5.0 + aRandom*10.0)*0.2);
-                
-                currentPos = flowPos;
-
-                if (uBuildProgress > 0.0) {
-                    float t = 1.0 - pow(1.0 - uBuildProgress, 3.0); 
-                    currentPos = mix(flowPos, treeP, t);
-                    
-                    float revealThreshold = 12.0 * (1.0 - uBuildProgress);
-                    if (treeP.y < revealThreshold) {
-                         currentPos = flowPos; 
-                    }
-                }
-
-                if (uExplodeTime > 0.0) {
-                    vec3 dir = normalize(currentPos - center);
-                    float speed = 5.0 + aRandom * 15.0;
-                    currentPos += dir * uExplodeTime * speed;
-                } 
-                if (uDisperse > 0.0) {
-                    vec3 dir = normalize(currentPos - center);
-                    float speed = 20.0 + aRandom * 30.0;
-                    currentPos += dir * uDisperse * speed; 
-                }
-
-                vec4 mvPosition = modelViewMatrix * vec4(currentPos, 1.0);
-                float finalSize = aSize * (250.0 / -mvPosition.z);
-                gl_PointSize = max(3.0, finalSize); 
-                gl_Position = projectionMatrix * mvPosition;
+                // Enhance the glow
+                document.querySelector('.glass-card').style.boxShadow = "0 0 60px rgba(56, 189, 248, 0.3)";
+                document.querySelector('.glass-card').style.borderColor = "rgba(186, 230, 253, 0.5)";
             }
-        `;
-
-        function createTrunk() {
-            const geometry = new THREE.BufferGeometry();
-            const positions = []; const colors = []; const sizes = []; const randoms = [];
-            const count = 400; 
-            const topY = CONFIG.treeHeight * 0.7; const bottomY = -2.0; const totalH = topY - bottomY;
-            const baseR = 3; const topR = 0.3;  
-            const texture = createSparkleTexture();
-
-            for (let i = 0; i < count; i++) {
-                const hRatio = Math.random(); 
-                const y = bottomY + hRatio * totalH;
-                const currentR = baseR * (1 - hRatio) + topR * hRatio;
-                const angle = Math.random() * Math.PI * 2;
-                const r = currentR * Math.sqrt(Math.random()) + (Math.random() - 0.5) * 0.8;
-                let x = Math.cos(angle) * r;
-                let z = Math.sin(angle) * r;
-                if (hRatio < 0.15) {
-                    const scatter = Math.pow(1.0 - hRatio / 0.15, 2.0);
-                    const spread = 4.0 * scatter; 
-                    x += (Math.random() - 0.5) * spread; z += (Math.random() - 0.5) * spread;
-                }
-                positions.push(x, y, z);
-                const brightness = 2 + Math.random() * 0.1; 
-                colors.push(0.1 * brightness, 0.2 * brightness, 0.5 * brightness);
-                sizes.push(Math.random() * 1 + 0.6);
-                randoms.push(Math.random());
-            }
-
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geometry.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3)); 
-            geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));   
-            geometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randoms, 1));
-            addGalaxyAttribute(geometry, count, 1.0, 10);
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: { uTime: { value: 0 }, uMorph: { value: 0 }, uTexture: { value: texture }, uOpacity: { value: 1.0 } },
-                vertexShader: commonVertexShader,
-                fragmentShader: commonFragmentShader,
-                depthWrite: false, blending: THREE.AdditiveBlending, transparent: true
-            });
-
-            trunkPoints = new THREE.Points(geometry, material);
-            scene.add(trunkPoints);
-        }
-
-        function createTree() {
-            const geometry = new THREE.BufferGeometry();
-            const positions = []; const colors = []; const sizes = []; const randoms = [];
-            const texture = createSparkleTexture();
-
-            for (let i = 0; i < CONFIG.particleCount; i++) {
-                const p = i / CONFIG.particleCount; 
-                const angle = p * Math.PI * 2 * CONFIG.spiralLoops;
-                const baseRadius = CONFIG.baseRadius * Math.pow(1.0 - p, 1.2); 
-                const baseHeight = p * CONFIG.treeHeight;
-                const wavePhase = angle * 2.5; 
-                const currentAmp = CONFIG.waveAmplitude * Math.pow(1.0 - p, 1.0);
-                const yWave = Math.sin(wavePhase) * currentAmp;
-                const rWave = Math.cos(wavePhase) * currentAmp * 0.8;
-                let centerY = baseHeight + yWave; let centerR = baseRadius + rWave;
-                let widthFactor = p > 0.4 ? 1.0 - (p - 0.4) * 0.5 : 1.0;
-                const currentWidth = CONFIG.ribbonWidth * widthFactor;
-                const v = Math.random() - 0.5; 
-                const twistAmp = 0.5 * Math.pow(1.0 - p, 2.0);
-                const tiltAngle = Math.cos(wavePhase) * twistAmp;
-                const rOffset = v * currentWidth * Math.cos(tiltAngle);
-                const yOffset = v * currentWidth * Math.sin(tiltAngle);
-                let rFinal = centerR + rOffset; let yFinal = centerY + yOffset;
-                const normalizedPos = v + 0.5; 
-                yFinal -= Math.pow(normalizedPos, 2) * currentWidth * 0.5;
-                yFinal += (Math.random() - 0.5) * 0.15;
-                let x = Math.cos(angle) * rFinal; let z = Math.sin(angle) * rFinal;
-
-                let scatterFactor = 0;
-                const tailRegion = 0.15;
-                if (p < tailRegion) {
-                    scatterFactor = Math.pow(1.0 - (p / tailRegion), 2.0);
-                    const flare = 0.7 * scatterFactor; 
-                    x += Math.cos(angle) * flare; z += Math.sin(angle) * flare;
-                    const chaosRadius = 3.0 * scatterFactor; x += (Math.random() - 0.5) * chaosRadius; z += (Math.random() - 0.5) * chaosRadius;
-                    yFinal += (Math.random() - 0.5) * scatterFactor * 0.2;
-                }
-                positions.push(x, yFinal, z);
-
-                const mixFactor = Math.random();
-                const mixedColor = CONFIG.colorInside.clone().lerp(CONFIG.colorOutside, mixFactor);
-                const brightnessFactor = (1.0 - Math.pow(p, 1.8) * 0.6) * 0.6;
-                mixedColor.multiplyScalar(brightnessFactor);
-                if (scatterFactor > 0) mixedColor.multiplyScalar(1.0 - scatterFactor * 0.7);
-                colors.push(mixedColor.r, mixedColor.g, mixedColor.b);
-                
-                let size = Math.random() * 1.0 + 0.2; 
-                size *= (1.0 - p * 0.3);
-                if (scatterFactor > 0) size *= (1.0 - scatterFactor * 0.6);
-                sizes.push(size);
-                randoms.push(Math.random());
-            }
-
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geometry.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3));
-            geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
-            geometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randoms, 1));
-            addGalaxyAttribute(geometry, CONFIG.particleCount, 1.0, 10);
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: { uTime: { value: 0 }, uMorph: { value: 0 }, uTexture: { value: texture }, uOpacity: { value: 1.0 } },
-                vertexShader: commonVertexShader,
-                fragmentShader: commonFragmentShader,
-                depthWrite: false, blending: THREE.AdditiveBlending, transparent: true
-            });
-
-            treePoints = new THREE.Points(geometry, material);
-            scene.add(treePoints);
-        }
-
-        // --- 迷你丝带树 (修复颜色，使用 aColor/aSize) ---
-        function createMiniTree() {
-            const geometry = new THREE.BufferGeometry();
-            const positions = []; const colors = []; const sizes = []; const randoms = [];
-            const texture = createSparkleTexture();
-            
-            const particleCount = 6000; 
-            const treeHeight = 12;      
-            const baseRadius = 3.5;     
-            const spiralLoops = 5;      
-            const ribbonWidth = 1.5;    
-            const waveAmplitude = 0.3;  
-            
-            const treePositions = [];
-
-            for (let i = 0; i < particleCount; i++) {
-                const p = i / particleCount; 
-                const angle = p * Math.PI * 2 * spiralLoops;
-                const rBase = baseRadius * Math.pow(1.0 - p, 1.2); 
-                const hBase = p * treeHeight;
-
-                const wavePhase = angle * 2.5; 
-                const currentAmp = waveAmplitude * Math.pow(1.0 - p, 1.0);
-                const yWave = Math.sin(wavePhase) * currentAmp;
-                const rWave = Math.cos(wavePhase) * currentAmp * 0.8;
-                let centerY = hBase + yWave; 
-                let centerR = rBase + rWave;
-                let widthFactor = p > 0.4 ? 1.0 - (p - 0.4) * 0.5 : 1.0;
-                const currentWidth = ribbonWidth * widthFactor;
-                const v = Math.random() - 0.5; 
-                const twistAmp = 0.5 * Math.pow(1.0 - p, 2.0);
-                const tiltAngle = Math.cos(wavePhase) * twistAmp;
-                const rOffset = v * currentWidth * Math.cos(tiltAngle);
-                const yOffset = v * currentWidth * Math.sin(tiltAngle);
-                let rFinal = centerR + rOffset; 
-                let yFinal = centerY + yOffset;
-                const normalizedPos = v + 0.5; 
-                yFinal -= Math.pow(normalizedPos, 2) * currentWidth * 0.5;
-                yFinal += (Math.random() - 0.5) * 0.1; 
-                let x = Math.cos(angle) * rFinal; 
-                let z = Math.sin(angle) * rFinal;
-                
-                treePositions.push(x, yFinal + 4, z);
-                positions.push(0,0,0);
-
-                // [修复] 初始设为蓝色
-                const mixFactor = Math.random();
-                const mixedColor = CONFIG.colorInside.clone().lerp(CONFIG.colorOutside, mixFactor);
-                mixedColor.multiplyScalar(0.8);
-                colors.push(mixedColor.r, mixedColor.g, mixedColor.b);
-                
-                let size = Math.random() * 0.8 + 0.1; 
-                sizes.push(size);
-                randoms.push(Math.random());
-            }
-            
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); 
-            geometry.setAttribute('aTreePos', new THREE.Float32BufferAttribute(treePositions, 3)); 
-            geometry.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3)); // 修正
-            geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));   // 修正
-            geometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randoms, 1));
-            
-            const material = new THREE.ShaderMaterial({
-                uniforms: { 
-                    uTime: { value: 0 }, 
-                    uTexture: { value: texture },
-                    uOpacity: { value: 0.0 },
-                    uGoldProgress: { value: 0.0 }, 
-                    uBuildProgress: { value: 0.0 },
-                    uExplodeTime: { value: 0.0 },
-                    uDisperse: { value: 0.0 } 
-                },
-                vertexShader: miniTreeVertexShader,
-                fragmentShader: commonFragmentShader,
-                depthWrite: true, 
-                blending: THREE.AdditiveBlending, 
-                transparent: true
-            });
-
-            miniTreePoints = new THREE.Points(geometry, material);
-            miniTreePoints.userData.explodeTime = 0.0;
-            scene.add(miniTreePoints);
-        }
-
-        // --- 3.3 闪烁星尘 (还原颜色) ---
-        function createTwinkles() {
-            const geometry = new THREE.BufferGeometry();
-            const positions = []; const colors = []; const sizes = []; const randoms = [];
-            const count = 500; const texture = createStarTexture();
-
-            for (let i = 0; i < count; i++) {
-                const p = Math.random(); const y = p * CONFIG.treeHeight;
-                const maxR = CONFIG.baseRadius * (1.0 - p) * 1.2; 
-                const r = Math.sqrt(Math.random()) * maxR; const angle = Math.random() * Math.PI * 2;
-                let x = Math.cos(angle) * r; let z = Math.sin(angle) * r;
-                if (p < 0.1) {
-                   const spread = 2.0 * Math.pow(1.0 - p / 0.1, 2.0);
-                   x += (Math.random() - 0.5) * spread; z += (Math.random() - 0.5) * spread;
-                }
-                positions.push(x, y, z);
-                colors.push(0.9, 0.95, 1.0); 
-                sizes.push(Math.random() < 0.05 ? Math.random() * 1.5 + 1.2 : Math.random() * 0.8 + 0.4);
-                randoms.push(Math.random());
-            }
-
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geometry.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3));
-            geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
-            geometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randoms, 1));
-            addGalaxyAttribute(geometry, count, 1.0, 10);
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: { uTime: { value: 0 }, uMorph: { value: 0 }, uTexture: { value: texture }, uOpacity: { value: 1.0 } },
-                vertexShader: commonVertexShader,
-                fragmentShader: commonFragmentShader,
-                depthWrite: false, blending: THREE.AdditiveBlending, transparent: true
-            });
-
-            twinklePoints = new THREE.Points(geometry, material);
-            scene.add(twinklePoints);
-        }
-
-        // --- 3.5 绚烂粒子球和双层星环 (还原) ---
-        function createTopParticles() {
-            const texture = createSparkleTexture();
-            const starTexture = createStarTexture();
-
-            const particleMaterial = new THREE.ShaderMaterial({
-                uniforms: { uTime: { value: 0 }, uMorph: { value: 0 }, uTexture: { value: texture }, uOpacity: { value: 1.0 } },
-                vertexShader: commonVertexShader,
-                fragmentShader: commonFragmentShader,
-                depthWrite: false, blending: THREE.AdditiveBlending, transparent: true
-            });
-
-            // 1. 核心球
-            const sGeo = new THREE.BufferGeometry();
-            const sPos = []; const sColors = []; const sSizes = []; const sRandoms = [];
-            const sphereCount = 2000; const radius = 1.2;
-            for(let i=0; i<sphereCount; i++) {
-                const u = Math.random(); const v = Math.random();
-                const theta = 2 * Math.PI * u; const phi = Math.acos(2 * v - 1);
-                let rRatio = Math.pow(Math.random(), 0.4); let r = radius * rRatio;
-                const x = r * Math.sin(phi) * Math.cos(theta);
-                const y = r * Math.sin(phi) * Math.sin(theta);
-                const z = r * Math.cos(phi);
-                sPos.push(x, y, z); 
-                const distNorm = r / radius; const baseB = 0.5 * (1.0 + distNorm * 0.6);
-                sColors.push(baseB * 0.2, baseB * 0.6, baseB * 1.0); 
-                sSizes.push(Math.random() * 0.4 + 0.2); sRandoms.push(Math.random());
-            }
-            sGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPos, 3));
-            sGeo.setAttribute('aColor', new THREE.Float32BufferAttribute(sColors, 3));
-            sGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(sSizes, 1));
-            sGeo.setAttribute('aRandom', new THREE.Float32BufferAttribute(sRandoms, 1));
-            
-            const objY = CONFIG.treeHeight + 1.5;
-            const galaxyLocalY = 10 - objY;
-            addGalaxyAttribute(sGeo, sphereCount, 1.0, galaxyLocalY);
-
-            topStarSpherePoints = new THREE.Points(sGeo, particleMaterial);
-            topStarSpherePoints.position.set(0, objY, 0); 
-            scene.add(topStarSpherePoints);
-
-            // 2. 环
-            const ringMaterial = particleMaterial.clone();
-            ringMaterial.uniforms.uTexture.value = starTexture;
-
-            const createRing = (radius, tiltX, tiltZ) => {
-                const rGeo = new THREE.BufferGeometry();
-                const rPos = []; const rColors = []; const rSizes = []; const rRandoms = [];
-                const ringCount = 400;
-                for(let i=0; i<ringCount; i++) {
-                    const angle = (i / ringCount) * Math.PI * 2;
-                    const scatterR = (Math.random() - 0.5) + (Math.random() - 0.5); 
-                    const r = radius + scatterR * 0.5; 
-                    let x = Math.cos(angle) * r; let y = (Math.random() - 0.5) * 0.4; let z = Math.sin(angle) * r;
-                    let y1 = y * Math.cos(tiltX) - z * Math.sin(tiltX);
-                    let z1 = y * Math.sin(tiltX) + z * Math.cos(tiltX);
-                    let x2 = x * Math.cos(tiltZ) - y1 * Math.sin(tiltZ);
-                    let y2 = x * Math.sin(tiltZ) + y1 * Math.cos(tiltZ);
-                    rPos.push(x2, y2, z1); 
-                    const distFactor = 1.0 - Math.abs(scatterR) * 0.8; const brightness = 0.4 * distFactor; 
-                    rColors.push(brightness, brightness * 1.1, brightness * 1.2); 
-                    rSizes.push(Math.random() * 0.6 + 0.4); rRandoms.push(Math.random());
-                }
-                rGeo.setAttribute('position', new THREE.Float32BufferAttribute(rPos, 3));
-                rGeo.setAttribute('aColor', new THREE.Float32BufferAttribute(rColors, 3));
-                rGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(rSizes, 1));
-                rGeo.setAttribute('aRandom', new THREE.Float32BufferAttribute(rRandoms, 1));
-                addGalaxyAttribute(rGeo, ringCount, 1.0, galaxyLocalY);
-                return new THREE.Points(rGeo, ringMaterial);
-            };
-
-            topStarRing1Points = createRing(2.0, Math.PI * 0.25, Math.PI * 0.1);
-            topStarRing1Points.position.set(0, objY, 0);
-            scene.add(topStarRing1Points);
-
-            topStarRing2Points = createRing(2.0, -Math.PI * 0.25, -Math.PI * 0.1);
-            topStarRing2Points.position.set(0, objY, 0);
-            scene.add(topStarRing2Points);
-        }
-
-        // --- 12张照片围墙 ---
-        function createPhotoGallery() {
-            photoGroup = new THREE.Group();
-            photoGroup.position.set(0, 10, 0); 
-            photoGroup.renderOrder = 999; 
-            scene.add(photoGroup);
-
-            const count = 12;
-            const radius = 10; 
-            const width = 3.5;
-            const height = 4.5;
-            const geometry = new THREE.PlaneGeometry(width, height);
-
-            const drawBackground = (ctx, isGolden) => {
-                const grd = ctx.createLinearGradient(0, 0, 300, 400);
-                if (isGolden) {
-                    grd.addColorStop(0, '#DEC47E'); 
-                    grd.addColorStop(1, '#F9EFAF'); 
-                } else {
-                    grd.addColorStop(0, '#001f3f'); 
-                    grd.addColorStop(1, '#0072ff'); 
-                }
-                ctx.fillStyle = grd;
-                ctx.fillRect(0, 0, 300, 400);
-            };
-
-            const createBackTexture = (text, isGolden = false) => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 300; canvas.height = 400;
-                const ctx = canvas.getContext('2d');
-                drawBackground(ctx, isGolden);
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-                ctx.lineWidth = 15;
-                ctx.strokeRect(10, 10, 280, 380);
-                ctx.fillStyle = "white";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.font = "bold 40px Arial";
-                const words = text.split(' ');
-                if (words.length > 2) {
-                    ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(' '), 150, 180);
-                    ctx.fillText(words.slice(Math.ceil(words.length/2)).join(' '), 150, 230);
-                } else {
-                    ctx.fillText(text, 150, 200);
-                }
-                return new THREE.CanvasTexture(canvas);
-            };
-
-            const createGoldenBackTexture = (text) => {
-                return createBackTexture(text, true);
-            };
-
-            const createFrontTexture = (imgFilename) => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 300; canvas.height = 400;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = "#000";
-                ctx.fillRect(0, 0, 300, 400);
-                ctx.strokeStyle = "rgba(255, 255, 255, 1.0)";
-                ctx.lineWidth = 15;
-                ctx.strokeRect(10, 10, 280, 380);
-                const tex = new THREE.CanvasTexture(canvas);
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                img.onload = () => {
-                    ctx.drawImage(img, 15, 15, 270, 370);
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-                    ctx.lineWidth = 15;
-                    ctx.strokeRect(10, 10, 280, 380);
-                    tex.needsUpdate = true;
-                };
-                img.onerror = () => {
-                    ctx.fillStyle = "#333";
-                    ctx.fillRect(15, 15, 270, 370);
-                    ctx.fillStyle = "white";
-                    ctx.font = "20px Arial";
-                    ctx.textAlign = "center";
-                    ctx.fillText("No Image", 150, 200);
-                };
-                img.src = imgFilename;
-                return tex;
-            };
-
-            for (let i = 0; i < count; i++) {
-                const cardContainer = new THREE.Group();
-                const imgFile = IMG_FILES[i % IMG_FILES.length];
-                const blessingText = BLESSINGS[i % BLESSINGS.length]; 
-
-                const realPhotoTex = createFrontTexture(imgFile);
-                const backTex = createBackTexture(blessingText, false); 
-
-                const frontMat = new THREE.MeshBasicMaterial({
-                    map: backTex, 
-                    transparent: true,
-                    opacity: 0, 
-                    side: THREE.FrontSide,
-                    depthWrite: false 
-                });
-                const frontMesh = new THREE.Mesh(geometry, frontMat);
-                frontMesh.position.z = 0.01; 
-
-                const backMat = new THREE.MeshBasicMaterial({
-                    map: backTex, 
-                    color: 0x999999, 
-                    transparent: true,
-                    opacity: 0,
-                    side: THREE.FrontSide,
-                    depthWrite: false 
-                });
-                const backMesh = new THREE.Mesh(geometry, backMat);
-                backMesh.rotation.y = Math.PI; 
-                backMesh.position.z = -0.01;
-
-                cardContainer.add(frontMesh);
-                cardContainer.add(backMesh);
-
-                const angle = (i / count) * Math.PI * 2;
-                cardContainer.position.set(
-                    Math.cos(angle) * radius,
-                    0,
-                    Math.sin(angle) * radius
-                );
-
-                cardContainer.lookAt(
-                    cardContainer.position.x * 2, 
-                    0, 
-                    cardContainer.position.z * 2
-                );
-
-                cardContainer.userData.originPos = cardContainer.position.clone();
-                cardContainer.userData.originQuat = cardContainer.quaternion.clone();
-                cardContainer.userData.originScale = cardContainer.scale.clone();
-                cardContainer.userData.randomOffset = Math.random() * 100;
-                
-                cardContainer.userData.frontMat = frontMat;
-                cardContainer.userData.backMat = backMat;
-                cardContainer.userData.realPhotoTex = realPhotoTex; 
-                cardContainer.userData.isRevealed = false; 
-                cardContainer.userData.blessingText = blessingText;
-                cardContainer.userData.isGolden = false; 
-
-                cardContainer.renderOrder = 10; 
-
-                photoGroup.add(cardContainer);
-            }
-            
-            photoGroup.userData.createGoldenBackTexture = createGoldenBackTexture;
-        }
-
-        // --- 4. 动画循环 ---
-        function animate() {
-            requestAnimationFrame(animate);
-            time += 0.008;
-
-            if (isHandOpen) {
-                targetMorph = 1.0;
-            } else {
-                targetMorph = 0.0;
-            }
-            if (isPinching) targetMorph = 1.0;
-
-            currentMorph += (targetMorph - currentMorph) * 0.05; 
-
-            const updateUniforms = (obj) => {
-                if(obj && obj.material && obj.material.uniforms && obj.material.uniforms.uMorph) {
-                    obj.material.uniforms.uMorph.value = currentMorph;
-                    obj.material.uniforms.uTime.value = time;
-                }
-            };
-            updateUniforms(treePoints);
-            updateUniforms(trunkPoints);
-            updateUniforms(twinklePoints);
-            updateUniforms(topStarSpherePoints);
-            updateUniforms(topStarRing1Points);
-            updateUniforms(topStarRing2Points);
-
-            let revealedCount = 0;
-            if (photoGroup) {
-                photoGroup.children.forEach(c => {
-                    if (c.userData.isRevealed) revealedCount++;
-                });
-            }
-            const unlockProgress = revealedCount / 12.0;
-
-            if (unlockProgress >= 1.0 && activeCard === null) {
-                if (!treeBuildStarted) {
-                    treeBuildStarted = true; 
-                }
-            }
-            
-            if (treeBuildStarted) {
-                treeBuildProgress += 0.005; 
-                if (treeBuildProgress > 1.0) treeBuildProgress = 1.0;
-            } else {
-                treeBuildProgress = 0.0;
-            }
-
-            if (miniTreePoints && miniTreePoints.material.uniforms.uOpacity) {
-                let targetOpacity = (currentMorph > 0.8) ? 1.0 : 0.0;
-                if (activeCard) targetOpacity = 0.0; 
-
-                let disperseVal = 0.0;
-                if (currentMorph < 0.8 && unlockProgress < 1.0) {
-                    disperseVal = (0.8 - currentMorph) * 5.0; 
-                }
-                miniTreePoints.material.uniforms.uDisperse.value = disperseVal;
-
-                let currentOp = miniTreePoints.material.uniforms.uOpacity.value;
-                currentOp += (targetOpacity - currentOp) * 0.1;
-                
-                miniTreePoints.material.uniforms.uOpacity.value = currentOp;
-                miniTreePoints.material.uniforms.uTime.value = time;
-                miniTreePoints.rotation.y = time * 0.1;
-
-                miniTreePoints.material.uniforms.uGoldProgress.value = unlockProgress;
-                miniTreePoints.material.uniforms.uBuildProgress.value = treeBuildProgress;
-
-                if (unlockProgress >= 1.0) {
-                    miniTreePoints.userData.explodeTime += 0.01;
-                } else {
-                    miniTreePoints.userData.explodeTime = 0.0;
-                }
-                miniTreePoints.material.uniforms.uExplodeTime.value = miniTreePoints.userData.explodeTime;
-            }
-
-            if (photoGroup) {
-                photoGroup.updateMatrixWorld();
-
-                if (activeCard) {
-                    rotationVelocity *= 0.5; 
-                } else {
-                    rotationVelocity *= 0.95;
-                    photoGroup.rotation.y -= 0.0005; 
-                }
-                
-                photoGroup.rotation.y += rotationVelocity;
-
-                photoGroup.children.forEach(cardContainer => {
-                    let targetOpacity = (currentMorph - 0.5) * 2.0;
-                    targetOpacity = Math.max(0, Math.min(1, targetOpacity));
-                    
-                    if (cardContainer.userData.frontMat) cardContainer.userData.frontMat.opacity = targetOpacity;
-                    if (cardContainer.userData.backMat) cardContainer.userData.backMat.opacity = targetOpacity;
-
-                    if (cardContainer === activeCard) {
-                        cardContainer.renderOrder = 9999;
-                        cardContainer.userData.frontMat.depthTest = true;
-                        cardContainer.userData.frontMat.depthWrite = true;
-                        cardContainer.userData.backMat.depthTest = true;
-                        cardContainer.userData.backMat.depthWrite = true;
-
-                        if (cardContainer.userData.frontMat) cardContainer.userData.frontMat.opacity = 1.0;
-                        if (cardContainer.userData.backMat) cardContainer.userData.backMat.opacity = 1.0;
-
-                        if (!cardContainer.userData.isRevealed) {
-                            cardContainer.userData.isRevealed = true;
-                            cardContainer.userData.frontMat.map = cardContainer.userData.realPhotoTex;
-                            cardContainer.userData.frontMat.needsUpdate = true;
-                            
-                            if (!cardContainer.userData.isGolden) {
-                                cardContainer.userData.isGolden = true;
-                                const goldTex = photoGroup.userData.createGoldenBackTexture(cardContainer.userData.blessingText);
-                                cardContainer.userData.backMat.map = goldTex;
-                                cardContainer.userData.backMat.needsUpdate = true;
-                            }
-                        }
-
-                        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-                        const targetWorldPos = camera.position.clone().add(forward.multiplyScalar(14));
-                        const targetLocalPos = photoGroup.worldToLocal(targetWorldPos.clone());
-
-                        const groupWorldQuat = new THREE.Quaternion();
-                        photoGroup.getWorldQuaternion(groupWorldQuat);
-                        const groupInv = groupWorldQuat.invert();
-                        const targetQuat = groupInv.multiply(camera.quaternion);
-
-                        cardContainer.position.lerp(targetLocalPos, 0.1);
-                        cardContainer.quaternion.slerp(targetQuat, 0.2);
-                        
-                        const pulse = 1.0 + Math.sin(time * 3.0) * 0.05; 
-                        const targetScale = new THREE.Vector3(3.2 * pulse, 3.2 * pulse, 3.2 * pulse);
-                        cardContainer.scale.lerp(targetScale, 0.1);
-
-                    } else {
-                        cardContainer.renderOrder = 10;
-                        cardContainer.userData.frontMat.depthWrite = false;
-                        cardContainer.userData.backMat.depthWrite = false;
-
-                        cardContainer.position.lerp(cardContainer.userData.originPos, 0.05);
-                        
-                        const floatY = Math.sin(time * 1.5 + cardContainer.userData.randomOffset) * 0.2;
-                        const targetPosWithFloat = cardContainer.userData.originPos.clone();
-                        targetPosWithFloat.y += floatY;
-                        cardContainer.position.lerp(targetPosWithFloat, 0.05);
-
-                        cardContainer.quaternion.slerp(cardContainer.userData.originQuat, 0.05);
-                        cardContainer.scale.lerp(cardContainer.userData.originScale, 0.05);
-                    }
-                });
-            }
-
-            if (currentMorph < 0.9) {
-                const rotSpeed = (1.0 - currentMorph) * 0.2; 
-                if(topStarSpherePoints) topStarSpherePoints.rotation.y = time * rotSpeed;
-                if(topStarRing1Points) {
-                    topStarRing1Points.rotation.y = time * 0.3;
-                    topStarRing1Points.rotation.x = Math.sin(time * 0.5) * 0.1;
-                }
-                if(topStarRing2Points) {
-                    topStarRing2Points.rotation.y = -time * 0.3;
-                    topStarRing2Points.rotation.z = Math.cos(time * 0.5) * 0.1;
-                }
-            }
-
-            const treeCamPos = new THREE.Vector3(0, 12, 35);
-            const galaxyCamPos = new THREE.Vector3(0, 12, 22); 
-            
-            const cameraDelay = 0.45;
-            let cameraProgress = 0;
-            
-            if (currentMorph > cameraDelay) {
-                cameraProgress = (currentMorph - cameraDelay) / (1.0 - cameraDelay);
-            }
-            const smoothCameraT = cameraProgress * cameraProgress * (3.0 - 2.0 * cameraProgress); 
-
-            if (currentMorph > 0.01) {
-                controls.enabled = false; 
-                camera.position.lerpVectors(treeCamPos, galaxyCamPos, smoothCameraT);
-                
-                const treeTarget = new THREE.Vector3(0, 10, 0);
-                const galaxyTarget = new THREE.Vector3(0, 10, 0); 
-                
-                const currentTarget = new THREE.Vector3().lerpVectors(treeTarget, galaxyTarget, smoothCameraT);
-                camera.lookAt(currentTarget);
-
-                scene.rotation.y = time * 0.05 * currentMorph;
-                scene.rotation.z = Math.sin(time * 0.1) * 0.02 * currentMorph;
-            } else {
-                controls.enabled = true; 
-                scene.rotation.y = 0;
-                scene.rotation.z = 0;
-                controls.update(); 
-            }
-
-            composer.render();
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // --- 5. MediaPipe 手势识别 ---
-        function initMediaPipe() {
-            const videoElement = document.getElementById('video-input');
-            const statusText = document.getElementById('status-text');
-            const instructionText = document.getElementById('instruction-text');
-            const loading = document.getElementById('loading');
-
-            const hands = new Hands({locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-            }});
-
-            hands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-
-            hands.onResults(onResults);
-
-            const cameraUtils = new Camera(videoElement, {
-                onFrame: async () => {
-                    await hands.send({image: videoElement});
-                },
-                width: 640,
-                height: 480
-            });
-
-            cameraUtils.start()
-                .then(() => {
-                    loading.style.opacity = 0;
-                    setTimeout(() => loading.style.display = 'none', 500);
-                    console.log("Camera started");
-                })
-                .catch(err => {
-                    console.error(err);
-                    loading.innerText = "摄像头启动失败 (请允许权限)";
-                    statusText.innerText = "Camera Error";
-                });
-            
-            function onResults(results) {
-                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                    const landmarks = results.multiHandLandmarks[0];
-                    const wrist = landmarks[0];
-                    const thumbTip = landmarks[4];
-                    
-                    const currX = wrist.x;
-                    if (typeof lastHandX !== 'undefined') {
-                        const delta = currX - lastHandX;
-                        if (!activeCard && isHandOpen) {
-                            rotationVelocity += delta * 0.35; 
-                        }
-                    }
-                    lastHandX = currX;
-
-                    const tips = [4, 8, 12, 16, 20]; 
-                    let avgDist = 0;
-                    tips.forEach(idx => {
-                        const tip = landmarks[idx];
-                        const d = Math.sqrt(Math.pow(tip.x - wrist.x, 2) + Math.pow(tip.y - wrist.y, 2));
-                        avgDist += d;
-                    });
-                    avgDist /= 5;
-                    
-                    const indexTip = landmarks[8];
-                    const pinchDist = Math.sqrt(Math.pow(thumbTip.x - indexTip.x, 2) + Math.pow(thumbTip.y - indexTip.y, 2));
-
-                    const PINCH_THRESHOLD = 0.05; 
-                    const OPEN_THRESHOLD = 0.25;  
-
-                    const otherTips = [8, 12, 16, 20];
-                    let fiveFingerDist = 0;
-                    otherTips.forEach(id => {
-                        const t = landmarks[id];
-                        fiveFingerDist += Math.sqrt(Math.pow(t.x - thumbTip.x, 2) + Math.pow(t.y - thumbTip.y, 2));
-                    });
-                    fiveFingerDist /= 4;
-                    const isFiveFingerPinch = fiveFingerDist < 0.1; 
-
-                    if (pinchDist < PINCH_THRESHOLD) {
-                        if (isFiveFingerPinch) {
-                             isPinching = false;
-                             isHandOpen = false; 
-                             activeCard = null;
-                             statusText.innerText = "Tree Mode";
-                             statusText.style.color = "#ffffff";
-                             instructionText.innerText = "🖐️ 张开手掌进入星空";
-                        } else {
-                            isPinching = true;
-                            isHandOpen = true; 
-                            statusText.innerText = "Memory Unlocked";
-                            statusText.style.color = "#ffcc00";
-                            instructionText.innerText = "✨ 正在回味美好时光...";
-
-                            if (!activeCard && photoGroup) {
-                                let minDist = Infinity;
-                                let closest = null;
-                                photoGroup.children.forEach(group => {
-                                    const worldPos = new THREE.Vector3();
-                                    group.getWorldPosition(worldPos);
-                                    const dist = worldPos.distanceTo(camera.position);
-                                    if (dist < minDist) {
-                                        minDist = dist;
-                                        closest = group;
-                                    }
-                                });
-                                if (closest) activeCard = closest;
-                            }
-                        }
-
-                    } else if (avgDist > OPEN_THRESHOLD) {
-                        isPinching = false;
-                        isHandOpen = true; 
-                        activeCard = null;
-                        statusText.innerText = "Galaxy Mode";
-                        statusText.style.color = "#88ccff";
-                        instructionText.innerText = "↔️ 左右挥手旋转 / 🤏 五指聚拢复原";
-
-                    } else if (isFiveFingerPinch) {
-                        isPinching = false;
-                        isHandOpen = false; 
-                        activeCard = null;
-                        statusText.innerText = "Tree Mode";
-                        statusText.style.color = "#ffffff";
-                        instructionText.innerText = "🖐️ 张开手掌进入星空";
-
-                    } else {
-                        isPinching = false;
-                        activeCard = null;
-                    }
-                } else {
-                    isPinching = false;
-                    activeCard = null;
-                    lastHandX = undefined; 
-                    
-                    if (isHandOpen) {
-                    } else {
-                         statusText.innerText = "MERRY CHRISTMAS";
-                         statusText.style.color = "#ffffff";
-                    }
-                }
-            }
-        }
-
-        initScene();
-        createTrunk();
-        createTree();
-        createMiniTree(); 
-        createTwinkles(); 
-        createTopParticles();
-        createPhotoGallery(); 
-        animate();
-        
-        setTimeout(initMediaPipe, 1000);
-
+        });
     </script>
 </body>
 </html>
